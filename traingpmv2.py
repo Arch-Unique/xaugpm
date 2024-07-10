@@ -43,13 +43,21 @@ def tf_data_generator(file_paths, seq_length, batch_size):
             x, y = create_sequences(data, seq_length)
             yield x, y
 
-    return tf.data.Dataset.from_generator(
+    dataset = tf.data.Dataset.from_generator(
         gen,
         output_signature=(
             tf.TensorSpec(shape=(None, seq_length, 1), dtype=tf.float32),
             tf.TensorSpec(shape=(None, 1), dtype=tf.float32)
         )
-    ).unbatch().batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    ).unbatch().batch(batch_size)
+
+    # Improve performance with parallel calls and prefetching
+    dataset = dataset.map(lambda x, y: (x, y), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+    dataset = dataset.repeat()
+    
+    return dataset
+
 
 def build_model(seq_length):
     model = Sequential([
