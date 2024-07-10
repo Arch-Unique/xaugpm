@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense,Bidirectional
 from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import joblib
@@ -50,8 +50,8 @@ X_test, y_test = create_sequences(scaled_test, seq_length)
 print("Build Model")
 # Build the LSTM model
 model = Sequential([
-    LSTM(50, activation='relu', input_shape=(None, 1), return_sequences=True),
-    LSTM(50, activation='relu'),
+    Bidirectional(LSTM(50, activation='relu', return_sequences=True)),
+    Bidirectional(LSTM(50, activation='relu')),
     Dense(1)
 ])
 
@@ -98,7 +98,38 @@ def predict_next_hour(model, scaler, input_data):
     predictions = np.array(predictions).reshape(-1, 1)
     return scaler.inverse_transform(predictions)
 
+from google.colab import files
+files.download('gold_price_model.h5')
+files.download('gold_price_scaler.pkl')
+
 # Example usage
 # last_60_minutes = test['Close'].iloc[-60:].values.reshape(-1, 1)
 # next_hour = predict_next_hour(model, scaler, last_60_minutes)
 # print(next_hour)
+
+
+# Get the last sequence from the test data
+# last_sequence = scaled_test[-seq_length:]
+
+# # Predict the next hour
+# next_hour_predictions = predict_next_hour(model, last_sequence)
+
+# # Inverse transform the predictions
+# next_hour_predictions = scaler.inverse_transform(next_hour_predictions)
+
+# # Create a DataFrame for the next hour predictions
+# last_datetime = test.index[-1]
+# next_hour_datetimes = pd.date_range(start=last_datetime + pd.Timedelta(minutes=1), periods=60, freq='1T')
+# next_hour_df = pd.DataFrame(next_hour_predictions, index=next_hour_datetimes, columns=['Predicted_Price'])
+
+# # Plot the next hour predictions
+# plt.figure(figsize=(12, 6))
+# plt.plot(test.index[-60:], test['Close'].iloc[-60:], label='Actual')
+# plt.plot(next_hour_df.index, next_hour_df['Predicted_Price'], label='Next Hour Prediction')
+# plt.title('Gold/USD Price Prediction for the Next Hour')
+# plt.xlabel('Date')
+# plt.ylabel('Price')
+# plt.legend()
+# plt.show()
+
+# print(next_hour_df)
